@@ -4,7 +4,10 @@ import com.alibaba.fastjson.JSON;
 import com.auth0.jwt.internal.org.apache.commons.lang3.ArrayUtils;
 import com.fh.sunss.api.common.annotetion.ExportExcel;
 import com.fh.sunss.api.entity.po.User;
+import com.fh.sunss.api.entity.vo.BaseDate;
+import com.fh.sunss.api.entity.vo.UserSeach;
 import com.fh.sunss.api.service.UserService;
+import com.fh.sunss.api.utils.FileUtiles;
 import com.fh.sunss.api.utils.ResponseDate;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFCell;
@@ -13,10 +16,12 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -33,10 +38,11 @@ public class UserController {
     @Autowired
     private UserService userService;
     @GetMapping("queryUserList")
-    public void  queryUserList(HttpServletResponse response){
+    public void  queryUserList(HttpServletResponse response,UserSeach us){
       try {
           //创建一个实体bean
           User  user=new User();
+         // List<User> userList=userService.queryUserAllList();
           //获取所有的属性数组
           Field[] fields = user.getClass().getDeclaredFields();
           List<String>  fieldNameList=new ArrayList<>();
@@ -107,9 +113,56 @@ public class UserController {
 
 
         }
-        @PostMapping
-    public ResponseDate  addUser(User user){
+    //增加
+    @PostMapping("addUser")
+    public ResponseDate  addUser(User user,HttpServletRequest request){
+        user.setIp(request.getRemoteAddr());
+        user.setIsDel(1);
         userService.addUser(user);
         return ResponseDate.success(null);
+    }
+    //分页查询
+    @PostMapping("queryUserPaging")
+    public BaseDate  queryUserPaging(UserSeach us){
+        BaseDate bd=userService.queryUserListPaging(us);
+        return bd;
+    }
+    //图片上传
+    @PostMapping("uploadfile")
+    public ResponseDate  uploadfile(HttpServletRequest request , MultipartFile  pictures) throws IOException {
+        String filename = pictures.getOriginalFilename();
+
+            String imgs = FileUtiles.saveFile(request, pictures.getInputStream(), filename, "imgs");
+
+        return ResponseDate.success(imgs);
+    }
+    //回显
+    @PostMapping("queryUserByid")
+    public ResponseDate  queryUserByid(Integer id){
+        User user=userService.queryUserByid(id);
+        return  ResponseDate.success(user);
+    }
+    //修改
+    @PostMapping("updateUser")
+    public ResponseDate  updateUser(User user,String oldImgs){
+        if(user.getImgPath()==null || user.getImgPath().equals("")){
+                user.setImgPath(oldImgs);
+        }
+        userService.updateUser(user);
+        return  ResponseDate.success(null);
+    }
+    //删除和批量删除
+    @PostMapping("deleteUser")
+    public ResponseDate  deleteUser(String [] id){
+
+        userService.deleteUser(id);
+        return  ResponseDate.success(null);
+    }
+    //删除和批量删除
+    @PostMapping("exportExcel")
+    public ResponseDate  exportExcel(HttpServletResponse response){
+
+
+        return  ResponseDate.success(null);
     }
 }
