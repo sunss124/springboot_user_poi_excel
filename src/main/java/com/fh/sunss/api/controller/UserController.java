@@ -158,7 +158,7 @@ public class UserController {
         userService.deleteUser(id);
         return  ResponseDate.success(null);
     }
-    //删除和批量删除
+    //
     @PostMapping("exportExcel")
     public ResponseDate  exportExcel(HttpServletResponse response){
 
